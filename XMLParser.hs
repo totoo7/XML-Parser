@@ -1,3 +1,10 @@
+module XMLParser ( 
+    XML(..),
+    Attr,
+    parseXML,
+) where 
+
+
 import Data.Char ( isAlpha, isSpace )
 
 -- XML Model
@@ -128,5 +135,3 @@ parseXML input =
   case parseElement input of
     Just (xml, _) -> Just xml
     Nothing      -> Nothing
-
-xml ="<person id=\"0\"><name>John</name><age>30</age></person>"
