@@ -1,15 +1,15 @@
 module Tests where
 
-import XMLParser (parseXML, XML(..))
-import XMLCommands 
-    ( printXML
-    , selectAttr
-    , getChildren
-    , child
-    , getText
-    , setAttr
-    , deleteAttr
-    , newChild
+import XMLParser ( parseXML, XML(..) )
+import XMLCommands ( 
+    printXML,
+    selectAttr,
+    getChildren,
+    child,
+    getText,
+    setAttr,
+    deleteAttr,
+    newChild
     )
 
 -- Example XML string

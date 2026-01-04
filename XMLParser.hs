@@ -4,7 +4,6 @@ module XMLParser (
     parseXML,
 ) where 
 
-
 import Data.Char ( isAlpha, isSpace )
 
 -- XML Model
@@ -78,10 +77,10 @@ parseAttrs input =
 -- eg: <name attr="value"> -> (tagName, attributes)+rest
 parseOpenTag :: Parser (Name, [Attr])
 parseOpenTag input = do
-    (_, r1) <- char '<' input
+    (_, r1) <- char '<' (skipSpaces input)
     (name, r2) <- parseName r1
     (attrs, r3) <- parseAttrs r2
-    (_, r4) <- char '>' r3
+    (_, r4) <- char '>' (skipSpaces r3)
     return ((name, attrs), r4)
 
 -- parses close tag </tag>
@@ -92,27 +91,34 @@ parseCloseTag tag input = do
     (_, r2) <- char '/' r1
     (name, r3) <- parseName r2
     if name /= tag then Nothing else do
-        (_, r4) <- char '>' r3
+        (_, r4) <- char '>' (skipSpaces r3)
         return ((), r4)
 
 -- reads everything until '<'
 -- used for extracting the actual data of the element
 parseText :: Parser String
 parseText input =
-    let (text, rest) = span (/= '<') input
-    in if null text then Nothing else Just (text, rest)
+    let (raw, rest) = span (/= '<') input
+        trimmed = trim raw
+    in if null trimmed then Nothing else Just (trimmed, rest)
+
+-- trims the whitespaces, reverse is used to trim before the data and after the data
+trim :: String -> String
+trim = f . f
+  where f = reverse . dropWhile isSpace
 
 -- parses child elements or text
 parseContent :: String -> (([XML], Maybe String), String)
 parseContent input =
-  case parseElement input of
+    let input' = skipSpaces input
+    in case parseElement input of
     Just (child, rest) ->
       let ((others, _), rest') = parseContent rest
       in ((child:others, Nothing), rest')
     Nothing ->
-      case parseText input of
+      case parseText input' of
         Just (text, rest) -> (([], Just text), rest)
-        Nothing       -> (([], Nothing), input)
+        Nothing       -> (([], Nothing), input')
 
 makeId :: [Attr] -> Id
 makeId attrs =

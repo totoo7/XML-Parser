@@ -9,7 +9,7 @@ module XMLCommands (
     newChild,
     xpath
 ) where 
-import XMLParser ( XML(..), Attr)
+import XMLParser ( XML(..), Attr )
 
 printXML :: XML -> String
 printXML = printElement 0
