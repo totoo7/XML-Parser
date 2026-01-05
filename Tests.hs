@@ -40,7 +40,7 @@ runTests =
             putStrLn "----- PRINT XML -----"
             putStrLn $ printXML tree
 
-            putStrLn "----- SELECT ATTR -----"
+            putStrLn "----- SELECT ATTRIBUTE -----"
             print $ selectAttr "0" "id" tree  -- Should be Just "0"
             print $ selectAttr "1" "id" tree  -- Should be Just "1"
             print $ selectAttr "0" "type" tree -- Should be Nothing
@@ -53,3 +53,13 @@ runTests =
             print $ child "0" 1 tree 
             print $ child "0" 2 tree
             print $ child "0" 10 tree  
+
+            putStrLn "----- GET TEXT -----"
+            print $ getText "0" tree
+            print $ getText "1" tree
+
+            putStrLn "----- SET ATTRIBUTE -----"
+
+            putStrLn "----- DELETE ATTRIBUTE -----"
+
+            putStrLn "----- NEW CHILD -----"
