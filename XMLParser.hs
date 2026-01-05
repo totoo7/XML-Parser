@@ -2,6 +2,7 @@ module XMLParser (
     XML(..),
     Attr,
     parseXML,
+    assignUniqueIds
 ) where 
 
 import Data.Char ( isAlpha, isSpace )
@@ -105,7 +106,7 @@ parseText input =
 -- trims the whitespaces, reverse is used to trim before the data and after the data
 trim :: String -> String
 trim = f . f
-  where f = reverse . dropWhile isSpace
+    where f = reverse . dropWhile isSpace
 
 -- parses child elements or text
 parseContent :: String -> (([XML], Maybe String), String)
@@ -113,18 +114,12 @@ parseContent input =
     let input' = skipSpaces input
     in case parseElement input of
     Just (child, rest) ->
-      let ((others, _), rest') = parseContent rest
-      in ((child:others, Nothing), rest')
+        let ((others, _), rest') = parseContent rest
+        in ((child:others, Nothing), rest')
     Nothing ->
-      case parseText input' of
-        Just (text, rest) -> (([], Just text), rest)
-        Nothing       -> (([], Nothing), input')
-
-makeId :: [Attr] -> Id
-makeId attrs =
-  case lookup "id" attrs of
-    Just v  -> v
-    Nothing -> "gen"
+        case parseText input' of
+            Just (text, rest) -> (([], Just text), rest)
+            Nothing -> (([], Nothing), input')
 
 -- whole logic
 parseElement :: Parser XML
@@ -132,12 +127,45 @@ parseElement input = do
     ((tag, attrs), r1) <- parseOpenTag (skipSpaces input)
     let ((children, text), r2) = parseContent r1
     (_, r3) <- parseCloseTag tag r2
-    let elementId = makeId attrs
-    return (Element tag attrs children text elementId, r3)
+    return (Element tag attrs children text "", r3)
 
 -- top level parser
 parseXML :: String -> Maybe XML
 parseXML input =
-  case parseElement input of
-    Just (xml, _) -> Just xml
-    Nothing      -> Nothing
+    case parseElement input of
+        Just (xml, _) -> Just xml
+        Nothing      -> Nothing
+
+-- assign unique IDs to all elements in the XML tree.
+-- ensures uniqueness
+assignUniqueIds :: XML -> XML
+assignUniqueIds root = updatedRoot
+  where
+    (updatedRoot, _, _) = traverseTree root [] 0
+
+    traverseTree :: XML -> [Id] -> Int -> (XML, [Id], Int)
+    traverseTree (Element tag attrs children text _) usedIds counter =
+      let (updatedChildren, usedIds', counter') = processChildren children usedIds counter
+          baseId = case lookup "id" attrs of
+                     Just v  -> makeUnique v usedIds'
+                     Nothing -> generateId counter' usedIds'
+          attrs' = ("id", baseId) : filter ((/= "id") . fst) attrs
+      in (Element tag attrs' updatedChildren text baseId, usedIds' ++ [baseId], counter' + 1)
+
+    processChildren :: [XML] -> [Id] -> Int -> ([XML], [Id], Int)
+    processChildren [] usedIds counter = ([], usedIds, counter)
+    processChildren (c:cs) usedIds counter =
+      let (updatedChild, usedIds', counter') = traverseTree c usedIds counter
+          (updatedSiblings, usedIdsFinal, counterFinal) = processChildren cs usedIds' counter'
+      in (updatedChild : updatedSiblings, usedIdsFinal, counterFinal)
+
+    makeUnique :: Id -> [Id] -> Id
+    makeUnique base used = findUnique base 1
+        where
+            findUnique candidate n
+                | candidate `elem` used = findUnique (base ++ "_" ++ show n) (n + 1)
+                | otherwise = candidate
+
+    generateId :: Int -> [Id] -> Id
+    generateId n used = let newId = show n
+                        in if newId `elem` used then generateId (n+1) used else newId
