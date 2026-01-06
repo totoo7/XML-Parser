@@ -11,7 +11,7 @@ import XMLParser ( XML(..) )
 data Step = 
     Child String 
     | ChildIndex String Int 
-    | Attr String 
+    | ChildAttr String String 
     | FilterEq String String
   deriving (Show)
 
@@ -38,13 +38,25 @@ split delimiter str =
     (_ : xs) -> first : split delimiter xs
 
 parseStep :: String -> Maybe Step
-parseStep str = 
+parseStep str =
   case break (== '[') str of
-    (name, "") -> Just (Child name)
+    (name, "") ->
+      Just (Child name)
     (name, '[' : rest) ->
       case span (/= ']') rest of
+        ('@':attr, "]") ->
+          Just (ChildAttr name attr)
         (index, "]") ->
           case reads index of
             [(i, "")] -> Just (ChildIndex name i)
             _ -> Nothing
-    _ -> Nothing
+        _ -> Nothing
+
+-- evalStep :: Step -> [XML] -> [XML]
+-- evalStep (Child name) nodes = concatMap (filterChildren name)
+
+-- filterChildren :: String -> XML -> [XML]
+-- filterChildren searchName (Element _ _ children _ _) = filter matchName children
+--   where 
+--     matchName (Element name _ _ _ _) = searchName == name
+--    matchName _ = False
