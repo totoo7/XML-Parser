@@ -2,6 +2,7 @@ module Main where
 
 import System.IO
 import XMLParser ( parseXML, XML(..), assignUniqueIds )
+import XPath ( parseXPath, evalXPath, XPathResult(..), runXPath )
 import XMLCommands (
     printXML,
     selectAttr,
@@ -12,6 +13,17 @@ import XMLCommands (
     deleteAttr,
     newChild
     )
+
+printResults :: [XPathResult] -> IO ()
+printResults [] = return ()
+printResults (r:rs) = do
+    printXPathResult r
+    printResults rs
+
+printXPathResult :: XPathResult -> IO ()
+printXPathResult (TextValue s) = putStrLn $ "Text: " ++ s
+printXPathResult (AttrValue s) = putStrLn $ "Attr: " ++ s
+printXPathResult (Node xml)    = putStrLn $ "Node: " ++ printXML xml
 
 main :: IO ()
 main = loop Nothing  -- Nothing = no XML loaded yet
@@ -126,6 +138,12 @@ main = loop Nothing  -- Nothing = no XML loaded yet
                     Just t -> 
                         let newTree = newChild elId childName t
                         in loop (Just newTree)
+                >> loop maybeXml
+
+            ["xpath", query] ->
+                case maybeXml of
+                    Nothing -> putStrLn "No XML loaded."
+                    Just t  -> runXPath query t
                 >> loop maybeXml
 
             _ -> putStrLn "Unknown command, type 'help'." >> loop maybeXml

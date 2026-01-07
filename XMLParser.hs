@@ -2,7 +2,8 @@ module XMLParser (
     XML(..),
     Attr,
     parseXML,
-    assignUniqueIds
+    assignUniqueIds,
+    trim
 ) where 
 
 import Data.Char ( isAlpha, isSpace )

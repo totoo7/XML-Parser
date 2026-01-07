@@ -1,6 +1,7 @@
 module Tests where
 
 import XMLParser ( parseXML, XML(..), assignUniqueIds )
+import XPath ( parseXPath, evalXPath, XPathResult(..), runXPath )
 import XMLCommands ( 
     printXML,
     selectAttr,
@@ -11,6 +12,7 @@ import XMLCommands (
     deleteAttr,
     newChild
     )
+
 
 -- Example XML string
 xml :: String
@@ -66,8 +68,14 @@ runTests =
 
             putStrLn "----- DELETE ATTRIBUTE -----"
             let tree2 = deleteAttr "1" "type" tree1
-            print $ selectAttr "1" "type" tree2  -- Should print: Nothing
+            print $ selectAttr "1" "type" tree2
 
             putStrLn "----- NEW CHILD -----"
             let tree3 = newChild "0_1" "test" tree
             putStrLn $ printXML tree3
+
+            putStrLn "----- XPATH TESTS -----"
+            runXPath "person" tree
+            runXPath "person/address" tree
+            runXPath "person/address[0]" tree
+            runXPath "person[@id]" tree
